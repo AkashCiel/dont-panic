@@ -14,6 +14,9 @@ __pycache__/
 venv/
 env/
 
+# Local / one-off scripts (not tracked)
+scripts/
+
 # Generated output (deployed separately to gh-pages branch)
 output/
 
