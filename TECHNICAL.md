@@ -54,6 +54,8 @@
 
 **Data flow:** 20 sources → fetch jobs store raw items in PostgreSQL → every 3 days, Wave 1 sends items to OpenAI Batch API for claim extraction → Wave 2 synthesises claims into a report tree → HTML is generated → deployed to GitHub Pages → Telegram notifications sent at each step.
 
+**Dependencies:** Declared in `pyproject.toml` with `uv.lock`. Root `requirements.txt` is generated via `uv export` (runtime dependencies only; used by GitHub Actions and plain `pip` installs). Local development: `uv sync --extra dev`; optional OpenReview support: `uv sync --extra openreview`.
+
 ---
 
 ## 2. Database Schema
@@ -367,7 +369,7 @@ All LLM calls use `response_format: {"type": "json_object"}` to enforce JSON out
 ### fetch.yml — Daily Fetch
 - **Trigger:** Cron `0 6 * * *` (06:00 UTC daily) + `workflow_dispatch`
 - **Timeout:** 30 minutes
-- **Steps:** Checkout → Python 3.12 → `pip install -r requirements.txt` → `python src/fetch/main.py`
+- **Steps:** Checkout → Python 3.12 → `pip install -r requirements.txt` → `python src/fetch/main.py` (`requirements.txt` matches the uv lock export; see README)
 - **Secrets needed:** `DATABASE_URL`, `SEMANTIC_SCHOLAR_API_KEY`, `GH_API_TOKEN`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `OPENREVIEW_USERNAME`, `OPENREVIEW_PASSWORD`
 - **Note:** `GITHUB_TOKEN` is a special GitHub Actions token; the workflow uses `GH_API_TOKEN` for the GitHub API requests to avoid naming collision
 
@@ -454,7 +456,7 @@ Batch abc123 ended with status: failed
 
 4. **Epoch AI CSV URLs:** The download URLs (`epoch.ai/data/ai-models.csv`) are assumed based on site structure. If they change, update `csv_fetcher.py`. The fetcher tries multiple URL patterns.
 
-5. **OpenReview SDK version:** The `openreview-py` package is not in `requirements.txt` (optional). Install manually: `pip install openreview-py`. The fetcher gracefully skips if the package is unavailable.
+5. **OpenReview SDK:** The `openreview-py` package is an optional extra (`uv sync --extra openreview` or `pip install openreview-py`). It is not in the default `requirements.txt` export. The fetcher gracefully skips if the package is unavailable.
 
 6. **Content truncation:** Item content is truncated at 2,000 characters in the Wave 1 user prompt. Abstracts are typically 150–300 words (~1,000 characters), so this is adequate. Full blog posts may be truncated significantly.
 

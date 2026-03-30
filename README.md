@@ -45,18 +45,33 @@ src/fetch/main.py           src/process/main.py
 
 ### Prerequisites
 - Python 3.12+
+- [uv](https://docs.astral.sh/uv/) (recommended) or `pip`
 - [Neon](https://neon.tech) account (PostgreSQL, free tier)
 - OpenAI API key
 - Telegram bot (optional but recommended)
 
 ### Steps
 
-1. **Clone and install:**
+1. **Clone and install dependencies**
+
+   With **uv** (recommended — uses `pyproject.toml` + `uv.lock`):
    ```bash
    git clone https://github.com/your-username/dont-panic
    cd dont-panic
+   uv sync --extra dev
+   ```
+   This creates `.venv` and installs runtime + test dependencies. Use `uv run python …` or `source .venv/bin/activate` then `python …`.
+
+   With **pip** only (same set as GitHub Actions / future Vercel — uses committed `requirements.txt`):
+   ```bash
+   git clone https://github.com/your-username/dont-panic
+   cd dont-panic
+   python3.12 -m venv .venv
+   source .venv/bin/activate   # Windows: .venv\Scripts\activate
    pip install -r requirements.txt
    ```
+
+   Optional extras: `uv sync --extra openreview` if you use the OpenReview source.
 
 2. **Configure credentials:**
    ```bash
@@ -89,9 +104,19 @@ src/fetch/main.py           src/process/main.py
 
 7. **Enable GitHub Actions** workflows are enabled by default.
 
+### Updating dependencies
+
+Edit **`pyproject.toml`**, then refresh the lockfile and the pip-compatible export used by GitHub Actions (and `pip` / Vercel). Commit **`pyproject.toml`**, **`uv.lock`**, and **`requirements.txt`** together:
+
+```bash
+uv lock
+uv export --format requirements-txt -o requirements.txt --no-hashes --no-annotate --no-emit-project
+```
+
 ## Tech Stack
 
 - **Language:** Python 3.12
+- **Dependencies:** [uv](https://docs.astral.sh/uv/) + `pyproject.toml` / `uv.lock`; `requirements.txt` is exported for `pip`, GitHub Actions, and future Vercel deploys
 - **Database:** Neon PostgreSQL (`psycopg2`)
 - **LLM:** OpenAI GPT-4o via Batch API (50% cost reduction)
 - **Fetching:** `feedparser`, `requests`, `beautifulsoup4`, `pandas`
