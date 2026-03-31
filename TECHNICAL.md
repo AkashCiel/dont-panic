@@ -138,6 +138,16 @@ CREATE INDEX idx_wave1_outputs_cycle ON wave1_outputs(report_cycle_id);
 
 **Deduplication:** Primary key is `(source_id, external_id)`. For RSS feeds, `external_id` = item link/guid. For APIs, it's the source's native ID. Inserts use `ON CONFLICT DO NOTHING`.
 
+### Connection pool and stale connections
+
+All DB access goes through `src/db/connection.py` (`ThreadedConnectionPool`, min 1 / max 10 connections).
+
+- **Checkout validation:** Before use, each connection from the pool is checked with `SELECT 1`. If the server closed the socket (e.g. long idle during OpenAI Batch API polling), the connection is dropped (`putconn(..., close=True)`) and another is taken, up to five attempts.
+- **After errors:** On `OperationalError` or `InterfaceError` during work, rollback is attempted only if safe; the connection is then discarded from the pool so it is not reused.
+- **Retry:** `execute_query`, `execute_non_query`, `execute_returning`, and `execute_many` retry once on `OperationalError` so a single lost connection does not fail the whole job without a second attempt.
+
+This mitigates Neon/network idle timeouts; it does not change OpenAI Batch retry behavior (batch jobs still fail if the batch itself errors).
+
 ---
 
 ## 3. Source Registry
@@ -380,6 +390,10 @@ All LLM calls use `response_format: {"type": "json_object"}` to enforce JSON out
 - **Secrets needed:** `DATABASE_URL`, `OPENAI_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`
 - **Output:** `output/index.html` deployed to GitHub Pages
 
+### docs-metadata.yml — PR documentation reminder
+- **Trigger:** `pull_request` targeting `main`
+- **Purpose:** If the PR changes implementation paths (`src/`, `tests/`, `.github/workflows/`, `pyproject.toml`, or `requirements.txt`), it must also change `README.md` or `TECHNICAL.md` in the same PR (so user-facing and technical docs stay aligned). **Bypass:** include `[docs-skip]` in any commit message in the PR, or set `SKIP_DOCS_CHECK=1` when running the check script locally / in a custom job (use sparingly).
+
 ---
 
 ## 8. Telegram Notification Templates
@@ -468,6 +482,8 @@ Batch abc123 ended with status: failed
 
 10. **HTML generator reads `output/latest_report.json`:** This file is written by `process/main.py` before the HTML generator runs. If processing fails mid-way, this file may be absent or stale. The HTML generator handles missing files gracefully (shows an error page).
 
+11. **Repository `scripts/` folder:** The root `scripts/` path is listed in `.gitignore` for local, untracked one-off utilities. Anything intended for the team or CI should live under `src/`, `tests/`, or `.github/scripts/` (tracked).
+
 ---
 
 ## 11. Cost Estimates
@@ -498,4 +514,4 @@ These estimates will be refined once real token usage data is available from the
 
 ---
 
-*Last updated: 2026-03-30 — initial implementation*
+*Last updated: 2026-03-31 — connection pool hardening, PR doc check workflow*

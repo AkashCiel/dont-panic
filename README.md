@@ -113,6 +113,10 @@ uv lock
 uv export --format requirements-txt -o requirements.txt --no-hashes --no-annotate --no-emit-project
 ```
 
+### Documentation and pull requests
+
+CI runs a **documentation sync check** on pull requests: if you change application code (`src/`, `tests/`), workflows, or `pyproject.toml` / `requirements.txt`, the same PR should also update **`README.md`** or **`TECHNICAL.md`**. To skip intentionally, put **`[docs-skip]`** in a commit message. Optional: install [pre-commit](https://pre-commit.com/) and run `pre-commit install` to run the same rule on staged files before you commit (see `.pre-commit-config.yaml`).
+
 ## Tech Stack
 
 - **Language:** Python 3.12

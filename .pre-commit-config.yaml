@@ -1,0 +1,11 @@
+# Install: pip install pre-commit && pre-commit install
+# Runs checks before each commit locally (optional; CI still enforces on PRs).
+
+repos:
+  - repo: local
+    hooks:
+      - id: check-docs-sync
+        name: Check README/TECHNICAL when code changes (staged)
+        entry: python3 .github/scripts/check_docs_sync.py --staged
+        language: system
+        pass_filenames: false
