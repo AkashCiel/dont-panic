@@ -5,7 +5,7 @@ Usage:
     python src/report/generate_html.py [--report-json PATH] [--output PATH]
 
 Reads:  output/latest_report.json
-Writes: output/index.html
+Writes: output/cognitive/index.html (landing page: output/index.html via generate_landing.py)
 """
 import argparse
 import json
@@ -269,6 +269,8 @@ def render_report(report_tree: dict, metadata: dict) -> str:
     <p style="margin-top:8px;font-size:0.8rem;color:#94a3b8">
         Generated: {_esc(created_at)} · {items} items analysed · ${total_cost:.4f} API cost
     </p>
+    <p style="margin-top:10px;font-size:0.85rem"><a href="../index.html" style="color:#93c5fd">Home</a> ·
+    <a href="../diffusion/index.html" style="color:#93c5fd">AI Diffusion report →</a></p>
 </header>
 
 <div class="exec-summary">
@@ -317,7 +319,7 @@ def load_report(path: str) -> dict:
 def main():
     parser = argparse.ArgumentParser(description="Generate HTML report from report JSON")
     parser.add_argument("--report-json", default=os.path.join(ROOT, "output", "latest_report.json"))
-    parser.add_argument("--output", default=os.path.join(ROOT, "output", "index.html"))
+    parser.add_argument("--output", default=os.path.join(ROOT, "output", "cognitive", "index.html"))
     args = parser.parse_args()
 
     if not os.path.exists(args.report_json):

@@ -130,3 +130,59 @@ def send_error(step: str, error_message: str) -> bool:
     token, chat_id = _get_credentials()
     text = f"❌ <b>Error in {step}</b>\n{error_message[:500]}"
     return _send(token, chat_id, text)
+
+
+def send_diffusion_fetch_summary(cycle_id: str, results: list[dict]) -> bool:
+    """Diffusion-only fetch summary (🌐 prefix)."""
+    token, chat_id = _get_credentials()
+    now = datetime.now(timezone.utc)
+    date_str = now.strftime("%Y-%m-%d %H:%M")
+    n_total = len(results)
+    n_success = sum(1 for r in results if r.get("status") == "success")
+    total_new = sum(r.get("items_found", 0) for r in results)
+    lines = [
+        f"🌐 <b>Diffusion fetch:</b> {date_str} UTC",
+        f"✅ {n_success}/{n_total} sources OK",
+    ]
+    for r in results:
+        status = r.get("status", "")
+        name = r.get("source_name", "?")
+        err = (r.get("error_message") or "")[:120]
+        if status == "error":
+            lines.append(f"❌ {name}: {err}")
+    lines.append(f"New items: {total_new}")
+    return _send(token, chat_id, "\n".join(lines))
+
+
+def send_diffusion_wave1_summary(
+    date: str,
+    items: int,
+    findings: int,
+    cost: float,
+    duration_minutes: float,
+) -> bool:
+    token, chat_id = _get_credentials()
+    text = (
+        f"🌐 <b>Diffusion Wave 1:</b> {date}\n"
+        f"Items in queue: {items}\n"
+        f"Findings extracted: {findings}\n"
+        f"Batch API cost: ${cost:.4f}\n"
+        f"Duration: {duration_minutes:.1f} min"
+    )
+    return _send(token, chat_id, text)
+
+
+def send_diffusion_wave2_summary(
+    date: str,
+    report_url: str,
+    cost: float,
+    duration_minutes: float,
+) -> bool:
+    token, chat_id = _get_credentials()
+    text = (
+        f"🌐 <b>Diffusion report generated:</b> {date}\n"
+        f"Report URL: {report_url}\n"
+        f"Batch API cost: ${cost:.4f}\n"
+        f"Duration: {duration_minutes:.1f} min"
+    )
+    return _send(token, chat_id, text)

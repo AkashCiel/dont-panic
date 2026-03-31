@@ -21,6 +21,11 @@ EPOCH_BENCHMARKS_URLS = [
     "https://epochai.org/data/benchmark-performance.csv",
 ]
 
+# Epoch AI company revenue (diffusion track)
+EPOCH_REVENUE_URLS = [
+    "https://epoch.ai/data/ai_companies_revenue_reports.csv",
+]
+
 HEADERS = {"User-Agent": "AGI-Tracker-Bot/1.0 (research)"}
 MAX_ROWS = 50
 
@@ -131,10 +136,31 @@ def fetch_epoch_ai_benchmarks(source: dict, fetch_cycle_id: str) -> list[dict]:
     return items
 
 
+def fetch_epoch_ai_company_revenue(source: dict, fetch_cycle_id: str) -> list[dict]:
+    """Download and parse Epoch AI company revenue CSV (diffusion)."""
+    urls = [source.get("url")] if source.get("url") else []
+    urls = [u for u in urls if u] + EPOCH_REVENUE_URLS
+    csv_bytes = None
+    for url in urls:
+        try:
+            resp = requests.get(url, headers=HEADERS, timeout=60)
+            resp.raise_for_status()
+            csv_bytes = resp.content
+            break
+        except Exception as e:
+            logger.warning(f"Epoch revenue CSV download failed for {url}: {e}")
+    if csv_bytes is None:
+        raise RuntimeError("Failed to download Epoch AI company revenue CSV")
+    items = _parse_csv_to_items(csv_bytes, source, fetch_cycle_id)
+    logger.info(f"  Epoch AI company revenue: {len(items)} rows")
+    return items
+
+
 def fetch_csv_source(source: dict, fetch_cycle_id: str) -> list[dict]:
     """Dispatch to the correct CSV fetcher by source name."""
     name = source.get("name", "").lower()
+    if "company revenue" in name:
+        return fetch_epoch_ai_company_revenue(source, fetch_cycle_id)
     if "dataset" in name or "ai model" in name:
         return fetch_epoch_ai_models(source, fetch_cycle_id)
-    else:
-        return fetch_epoch_ai_benchmarks(source, fetch_cycle_id)
+    return fetch_epoch_ai_benchmarks(source, fetch_cycle_id)
