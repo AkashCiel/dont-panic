@@ -13,6 +13,7 @@ from src.config import get_config
 from src.db.models import get_diffusion_wave1_outputs_for_cycle, insert_diffusion_report
 from src.process.diffusion_wave1 import run_diffusion_wave1
 from src.process.diffusion_wave2 import run_diffusion_wave2
+from src.process.response_envelope import MissingContextHalt
 
 logging.basicConfig(
     level=logging.INFO,
@@ -90,6 +91,13 @@ def run_diffusion_processing() -> None:
                 )
             except Exception as e:
                 logger.warning(f"Telegram diffusion Wave 1 notification failed: {e}")
+    except MissingContextHalt as e:
+        logger.warning(
+            "Diffusion pipeline halted: missing context (track=%s). Restart manually after fixing. %s",
+            e.track_name,
+            e.detail[:500],
+        )
+        sys.exit(1)
     except Exception as e:
         logger.error(f"Diffusion Wave 1 failed: {e}", exc_info=True)
         if config.telegram_bot_token:
@@ -161,6 +169,13 @@ def run_diffusion_processing() -> None:
             except Exception as e:
                 logger.warning(f"Telegram diffusion Wave 2 notification failed: {e}")
 
+    except MissingContextHalt as e:
+        logger.warning(
+            "Diffusion pipeline halted: missing context (track=%s). Restart manually after fixing. %s",
+            e.track_name,
+            e.detail[:500],
+        )
+        sys.exit(1)
     except Exception as e:
         logger.error(f"Diffusion Wave 2 failed: {e}", exc_info=True)
         if config.telegram_bot_token:

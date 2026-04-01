@@ -15,10 +15,12 @@ from src.process.diffusion_prompts import (
     build_diffusion_wave1_system_prompt,
     build_diffusion_wave1_user_prompt,
 )
+from src.process.response_envelope import parse_envelope, unwrap_payload
 
 logger = logging.getLogger(__name__)
 
 BATCH_SIZE = 12
+TRACK_NAME = "diffusion"
 
 
 def run_diffusion_wave1(provider: LLMProvider, report_cycle_id: str) -> dict:
@@ -93,20 +95,17 @@ def run_diffusion_wave1(provider: LLMProvider, report_cycle_id: str) -> dict:
             continue
 
         try:
-            parsed = json.loads(result.content)
+            parsed = parse_envelope(result.content)
+            payload = unwrap_payload(parsed, TRACK_NAME)
         except json.JSONDecodeError as e:
             logger.error(f"Diffusion Wave 1 JSON parse failed: {e}\n{result.content[:400]}")
             continue
 
-        if parsed.get("error") == "MISSING CONTEXT" or "MISSING CONTEXT" in result.content[:200]:
-            logger.error("Diffusion Wave 1 returned MISSING CONTEXT — leaving items unmarked for retry")
-            continue
-
-        findings = parsed.get("findings") or []
+        findings = payload.get("findings") or []
         if not isinstance(findings, list):
             findings = []
-        source_weight = int(parsed.get("source_weight", 3))
-        weight_justification = str(parsed.get("weight_justification", ""))
+        source_weight = int(payload.get("source_weight", 3))
+        weight_justification = str(payload.get("weight_justification", ""))
         model_name = getattr(provider, "model", "unknown")
 
         cost_per_item = result.cost_usd / max(len(item_ids), 1)

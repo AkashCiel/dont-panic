@@ -14,8 +14,11 @@ from src.process.diffusion_prompts import (
     build_diffusion_wave2_user_prompt,
     format_cognitive_context_block,
 )
+from src.process.response_envelope import parse_envelope, unwrap_payload
 
 logger = logging.getLogger(__name__)
+
+TRACK_NAME = "diffusion"
 
 MAX_FINDINGS_CHARS = 80_000
 
@@ -147,7 +150,8 @@ def run_diffusion_wave2(provider: LLMProvider, report_cycle_id: str, wave1_summa
         raise RuntimeError(f"Diffusion Wave 2 failed: {result.error}")
 
     try:
-        report_tree = json.loads(result.content)
+        parsed = parse_envelope(result.content)
+        report_tree = unwrap_payload(parsed, TRACK_NAME)
     except json.JSONDecodeError as e:
         raise RuntimeError(f"Diffusion Wave 2 JSON parse failed: {e}\n{result.content[:500]}") from e
 
@@ -178,7 +182,6 @@ def _run_diffusion_wave2_split(
         label = CASCADE_ORDER_LABELS.get(order, f"order_{order}")
         subset = "\n".join(lines[:2000])
         custom_id = f"dw2-p-{order}-{str(uuid.uuid4())[:8]}"
-        meta_by_id[custom_id] = order
         batch_requests.append(
             BatchRequest(
                 custom_id=custom_id,
@@ -204,7 +207,8 @@ def _run_diffusion_wave2_split(
             logger.error(f"Partial cascade failed: {r.error}")
             continue
         try:
-            partial_docs.append(json.loads(r.content))
+            parsed = parse_envelope(r.content)
+            partial_docs.append(unwrap_payload(parsed, TRACK_NAME))
         except json.JSONDecodeError as e:
             logger.error(f"Partial JSON parse failed: {e}")
 
@@ -237,7 +241,8 @@ def _run_diffusion_wave2_split(
     if mr.error:
         raise RuntimeError(f"Diffusion Wave 2 merge failed: {mr.error}")
     try:
-        report_tree = json.loads(mr.content)
+        parsed = parse_envelope(mr.content)
+        report_tree = unwrap_payload(parsed, TRACK_NAME)
     except json.JSONDecodeError as e:
         raise RuntimeError(f"Merge JSON parse failed: {e}") from e
 

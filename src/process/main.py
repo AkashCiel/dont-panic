@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 
 from src.config import get_config
 from src.db.models import insert_report
+from src.process.response_envelope import MissingContextHalt
 from src.process.wave1 import run_wave1
 from src.process.wave2 import run_wave2
 
@@ -93,6 +94,15 @@ def run_processing() -> None:
             except Exception as e:
                 logger.warning(f"Wave 1 Telegram notification failed: {e}")
 
+    except MissingContextHalt as e:
+        logger.warning(
+            "Cognitive pipeline halted: LLM reported missing context (track=%s). "
+            "Inject missing context and restart manually. Detail: %s",
+            e.track_name,
+            e.detail[:500],
+        )
+        sys.exit(1)
+
     except Exception as e:
         logger.error(f"Wave 1 failed: {e}", exc_info=True)
         if config.telegram_bot_token:
@@ -161,6 +171,15 @@ def run_processing() -> None:
                 )
             except Exception as e:
                 logger.warning(f"Wave 2 Telegram notification failed: {e}")
+
+    except MissingContextHalt as e:
+        logger.warning(
+            "Cognitive pipeline halted: LLM reported missing context (track=%s). "
+            "Inject missing context and restart manually. Detail: %s",
+            e.track_name,
+            e.detail[:500],
+        )
+        sys.exit(1)
 
     except Exception as e:
         logger.error(f"Wave 2 failed: {e}", exc_info=True)

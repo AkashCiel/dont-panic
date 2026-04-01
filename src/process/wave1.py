@@ -12,10 +12,12 @@ from src.db.models import (
 )
 from src.llm.provider import BatchRequest, LLMProvider
 from src.process.prompts import build_wave1_system_prompt, build_wave1_user_prompt
+from src.process.response_envelope import parse_envelope, unwrap_payload
 
 logger = logging.getLogger(__name__)
 
 BATCH_SIZE = 12  # items per Wave 1 API call (for high-volume sources like arXiv)
+TRACK_NAME = "cognitive"
 
 
 def run_wave1(provider: LLMProvider, report_cycle_id: str) -> dict:
@@ -104,14 +106,15 @@ def run_wave1(provider: LLMProvider, report_cycle_id: str) -> dict:
             continue
 
         try:
-            parsed = json.loads(result.content)
+            parsed = parse_envelope(result.content)
+            payload = unwrap_payload(parsed, TRACK_NAME)
         except json.JSONDecodeError as e:
             logger.error(f"Wave 1 JSON parse failed for {result.custom_id}: {e}\nContent: {result.content[:300]}")
             continue
 
-        claims = parsed.get("claims", [])
-        source_weight = int(parsed.get("source_weight", 3))
-        weight_justification = parsed.get("weight_justification", "")
+        claims = payload.get("claims", [])
+        source_weight = int(payload.get("source_weight", 3))
+        weight_justification = payload.get("weight_justification", "")
         model_name = getattr(provider, "model", "unknown")
 
         # Insert one wave1_output row per item_id (shares the claims)

@@ -125,6 +125,21 @@ def send_wave2_summary(
     return _send(token, chat_id, text)
 
 
+def send_missing_context_alert(track_name: str, missing: list, detail: str) -> bool:
+    """
+    Notify when an LLM returns missing_context: true.
+    Message contains only: track_name, missing, detail (per product requirement).
+    """
+    token, chat_id = _get_credentials()
+    missing_str = ", ".join(str(m) for m in missing) if missing else ""
+    text = (
+        f"<b>track_name</b>\n{track_name}\n\n"
+        f"<b>missing</b>\n{missing_str}\n\n"
+        f"<b>detail</b>\n{detail[:8000]}"
+    )
+    return _send(token, chat_id, text)
+
+
 def send_error(step: str, error_message: str) -> bool:
     """Send an error notification for a failed pipeline step."""
     token, chat_id = _get_credentials()

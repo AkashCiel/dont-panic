@@ -17,6 +17,9 @@ env/
 # Local / one-off scripts (not tracked)
 scripts/
 
+# O*NET MySQL dump (large; local reference only)
+db_30_2_mysql/
+
 # Generated output (deployed separately to gh-pages branch)
 output/
 
