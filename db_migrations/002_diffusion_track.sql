@@ -1,5 +1,5 @@
 -- Diffusion track schema additions
--- Run: psql $DATABASE_URL -f src/db/migrations/002_diffusion_track.sql
+-- Run: psql $DATABASE_URL -f db_migrations/002_diffusion_track.sql
 
 ALTER TABLE sources ADD COLUMN IF NOT EXISTS track VARCHAR(20) DEFAULT 'cognitive';
 

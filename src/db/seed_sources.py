@@ -2,7 +2,7 @@
 Seed the sources table: 20 cognitive sources + 12 diffusion sources (ids 21–32).
 Idempotent — uses insert_source for cognitive rows and upserts diffusion rows by id.
 
-Requires migration 002 (track column). Run: python src/db/seed_sources.py
+Requires migration 002 (track column). SQL: db_migrations/002_diffusion_track.sql. Run: python src/db/seed_sources.py
 """
 import os
 import sys

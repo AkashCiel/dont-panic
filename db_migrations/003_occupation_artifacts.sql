@@ -1,6 +1,6 @@
 -- O*NET-derived occupation bundles for LLM downstream (one row per occupation).
 -- Populate separately from O*NET export (e.g. MySQL dump → ETL script); table is empty after this migration.
--- Run: psql $DATABASE_URL -f src/db/migrations/003_occupation_artifacts.sql
+-- Run: psql $DATABASE_URL -f db_migrations/003_occupation_artifacts.sql
 
 CREATE TABLE IF NOT EXISTS occupation_artifacts (
     onetsoc_code VARCHAR(10) PRIMARY KEY,

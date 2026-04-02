@@ -1,5 +1,5 @@
 -- AGI Capability Tracker — Initial Schema
--- Run: psql $DATABASE_URL -f src/db/migrations/001_initial_schema.sql
+-- Run: psql $DATABASE_URL -f db_migrations/001_initial_schema.sql
 
 CREATE TABLE IF NOT EXISTS sources (
     id SERIAL PRIMARY KEY,

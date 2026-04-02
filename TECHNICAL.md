@@ -60,7 +60,7 @@
 
 ## 2. Database Schema
 
-Executed via `src/db/migrations/001_initial_schema.sql`.
+Executed via `db_migrations/001_initial_schema.sql`.
 
 ```sql
 -- Source registry
@@ -518,7 +518,7 @@ These estimates will be refined once real token usage data is available from the
 
 The diffusion pipeline runs alongside the cognitive track: it analyses how AI capabilities spread through society (enterprise, government, individuals). It shares `fetched_items` with cognitive sources where configured (`sources.track`, shared source IDs in `src/db/diffusion_constants.py`).
 
-- **Migration:** `src/db/migrations/002_diffusion_track.sql` adds `track` on `sources`, `wave1_outputs`, `reports`; `fetched_items.diffusion_processed`; tables `diffusion_wave1_outputs` and `diffusion_reports`.
+- **Migration:** `db_migrations/002_diffusion_track.sql` adds `track` on `sources`, `wave1_outputs`, `reports`; `fetched_items.diffusion_processed`; tables `diffusion_wave1_outputs` and `diffusion_reports`.
 - **Seed:** `python src/db/seed_sources.py` — 20 cognitive + 12 diffusion sources (ids 21–32). Requires migration 002 first.
 - **Fetch:** `python src/fetch/main.py [--track all|cognitive|diffusion]` — default `all`. New fetch methods: `sec_edgar`, `sam_gov`, `usaspending`, `ted_eu`, `cloudflare_radar`, `rss_ai`, `economic_index`. Cloudflare Radar (source 26) is skipped if the last successful fetch was within 7 days; Anthropic Economic Index (32) within 30 days.
 - **Process:** `python src/process/diffusion_main.py` — Wave 1/2 use `diffusion_prompts.py` and `framework/ai_diffusion_framework.md`. Wave 2 pulls context from the latest cognitive report in `reports` (`track = 'cognitive'`).
