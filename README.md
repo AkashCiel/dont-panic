@@ -81,7 +81,7 @@ src/fetch/main.py           src/process/main.py
 
 3. **Initialize the database:**
    ```bash
-   psql $DATABASE_URL -f src/db/migrations/001_initial_schema.sql
+   psql $DATABASE_URL -f db_migrations/001_initial_schema.sql
    python src/db/seed_sources.py
    ```
 

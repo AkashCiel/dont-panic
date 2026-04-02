@@ -1,14 +1,14 @@
-name: Generate Report
+name: Generate Diffusion Report
 
 on:
   schedule:
-    - cron: '0 8 */3 * *'  # 08:00 UTC every 3 days
-  workflow_dispatch:         # allow manual trigger
+    - cron: '0 10 */3 * *'  # 10:00 UTC every 3 days
+  workflow_dispatch:
 
 jobs:
   process:
     runs-on: ubuntu-latest
-    timeout-minutes: 120  # Batch API polling may take time
+    timeout-minutes: 120
 
     steps:
       - name: Checkout repository
@@ -23,8 +23,8 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run Wave 1 and Wave 2
-        run: python src/process/main.py
+      - name: Run diffusion Wave 1 and Wave 2
+        run: python src/process/diffusion_main.py
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -33,8 +33,12 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
 
-      - name: Generate HTML report
-        run: python src/report/generate_html.py
+      - name: Generate diffusion HTML
+        run: python src/report/generate_diffusion_html.py
+
+      - name: Generate cognitive HTML if report JSON exists
+        run: |
+          if [ -f output/latest_report.json ]; then python src/report/generate_html.py; fi
 
       - name: Generate landing page
         run: python src/report/generate_landing.py
@@ -46,4 +50,4 @@ jobs:
           publish_dir: ./output
           user_name: 'github-actions[bot]'
           user_email: 'github-actions[bot]@users.noreply.github.com'
-          commit_message: 'Deploy report ${{ github.run_number }}'
+          commit_message: 'Deploy diffusion report ${{ github.run_number }}'

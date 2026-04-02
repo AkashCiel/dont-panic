@@ -33,6 +33,11 @@ class Config:
     report_interval_days: int
     fetch_schedule_utc: str
 
+    # Diffusion track (optional)
+    sam_gov_api_key: str
+    cloudflare_api_token: str
+    diffusion_report_interval_days: int
+
     @classmethod
     def from_env(cls) -> "Config":
         """Load config from environment variables. Raises ValueError for missing required vars."""
@@ -53,6 +58,9 @@ class Config:
             github_token=os.environ.get("GITHUB_TOKEN", ""),
             report_interval_days=int(os.environ.get("REPORT_INTERVAL_DAYS", "3")),
             fetch_schedule_utc=os.environ.get("FETCH_SCHEDULE_UTC", "0600"),
+            sam_gov_api_key=os.environ.get("SAM_GOV_API_KEY", ""),
+            cloudflare_api_token=os.environ.get("CLOUDFLARE_API_TOKEN", ""),
+            diffusion_report_interval_days=int(os.environ.get("DIFFUSION_REPORT_INTERVAL_DAYS", "3")),
         )
 
 

@@ -31,7 +31,7 @@ The repository may have been modified since initial build. Before making any cha
 1. `git fetch origin && git log --oneline -20` — review recent commits
 2. `cat TECHNICAL.md` — understand current implementation details
 3. `ls src/` — verify project structure matches expectations
-4. `cat src/db/migrations/` — check all existing migrations
+4. `cat db_migrations/` — check all existing migrations
 5. `python src/fetch/main.py --help` or read `src/fetch/main.py` — understand current fetch orchestration
 6. Check `requirements.txt` for current dependencies
 7. Verify the database schema by connecting and running `\dt` and `\d+ fetched_items` (or equivalent)
@@ -145,7 +145,7 @@ Add these to the `sources` table with `track = 'diffusion'` (see schema changes 
 
 ### New Migration File
 
-Create `src/db/migrations/002_diffusion_track.sql`:
+Create `db_migrations/002_diffusion_track.sql`:
 
 ```sql
 -- Add track column to sources table to distinguish cognitive vs diffusion
@@ -609,11 +609,10 @@ agi-tracker/
 │   │   ├── generate_diffusion_html.py        # NEW: diffusion report HTML generation
 │   │   ├── template.html                     # EXISTING: cognitive template
 │   │   └── diffusion_template.html           # NEW: diffusion report template
-│   ├── db/
-│   │   └── migrations/
-│   │       ├── 001_initial_schema.sql        # EXISTING (do not modify)
-│   │       └── 002_diffusion_track.sql       # NEW: diffusion schema additions
 │   └── (other existing files unchanged)
+├── db_migrations/
+│   ├── 001_initial_schema.sql                # EXISTING (do not modify)
+│   └── 002_diffusion_track.sql               # NEW: diffusion schema additions
 ├── output/
 │   ├── index.html                            # MODIFY: make landing page linking to both reports
 │   └── diffusion/
@@ -707,7 +706,7 @@ Same principles as cognitive track:
 After Claude Code finishes implementation:
 
 1. [ ] Review the `diffusion-track` branch diff against `main`
-2. [ ] Run the new migration: `psql $DATABASE_URL -f src/db/migrations/002_diffusion_track.sql`
+2. [ ] Run the new migration: `psql $DATABASE_URL -f db_migrations/002_diffusion_track.sql`
 3. [ ] Seed new sources: `python src/db/seed_sources.py` (should be idempotent)
 4. [ ] Get a SAM.gov API key at sam.gov (free registration)
 5. [ ] Get a Cloudflare API token (free tier) with Radar read permissions

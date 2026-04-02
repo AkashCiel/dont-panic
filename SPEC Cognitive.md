@@ -522,10 +522,10 @@ agi-tracker/
 │   │   └── telegram.py                # Telegram notification functions
 │   ├── db/
 │   │   ├── connection.py              # Database connection management
-│   │   ├── models.py                  # Database operations (insert, query, deduplicate)
-│   │   └── migrations/
-│   │       └── 001_initial_schema.sql # The schema from Section 3
+│   │   └── models.py                  # Database operations (insert, query, deduplicate)
 │   └── config.py                      # Environment variable loading and validation
+├── db_migrations/
+│   └── 001_initial_schema.sql         # The schema from Section 3
 ├── output/                            # Generated HTML reports (deployed to GitHub Pages)
 │   └── index.html
 ├── tests/                             # Basic tests for critical paths
@@ -606,7 +606,7 @@ After Claude Code finishes implementation, the developer needs to:
 5. [ ] Optionally: get a Semantic Scholar API key at semanticscholar.org/product/api
 6. [ ] Optionally: create an OpenReview account at openreview.net
 7. [ ] Add all credentials as GitHub Actions secrets in the repo settings
-8. [ ] Run the database migration: `psql $DATABASE_URL -f src/db/migrations/001_initial_schema.sql`
+8. [ ] Run the database migration: `psql $DATABASE_URL -f db_migrations/001_initial_schema.sql`
 9. [ ] Seed the sources table: `python src/db/seed_sources.py`
 10. [ ] Test locally: `python src/fetch/main.py` then `python src/process/main.py`
 11. [ ] Enable GitHub Pages (Settings → Pages → Source: Deploy from branch → gh-pages)

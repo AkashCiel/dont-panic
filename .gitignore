@@ -14,8 +14,13 @@ __pycache__/
 venv/
 env/
 
-# Local / one-off scripts (not tracked)
+# Local scripts (not tracked)
 scripts/
+
+# SQL migrations live at repo root: db_migrations/
+
+# O*NET MySQL dump (large; local reference only)
+db_30_2_mysql/
 
 # Generated output (deployed separately to gh-pages branch)
 output/

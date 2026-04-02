@@ -8,8 +8,12 @@ from typing import Any
 from src.db.models import get_wave1_outputs_for_cycle
 from src.llm.provider import BatchRequest, LLMProvider
 from src.process.prompts import build_wave2_system_prompt, build_wave2_user_prompt
+from src.prompts.cognitive import build_wave2_criterion_branch_user_prompt, build_wave2_synthesis_user_prompt
+from src.process.response_envelope import parse_envelope, unwrap_payload
 
 logger = logging.getLogger(__name__)
+
+TRACK_NAME = "cognitive"
 
 # If the claims document exceeds this many characters, split by criterion
 MAX_CLAIMS_CHARS = 80_000
@@ -136,7 +140,8 @@ def run_wave2(provider: LLMProvider, report_cycle_id: str, wave1_summary: dict) 
         raise RuntimeError(f"Wave 2 API call failed: {result.error}")
 
     try:
-        report_tree = json.loads(result.content)
+        parsed = parse_envelope(result.content)
+        report_tree = unwrap_payload(parsed, TRACK_NAME)
     except json.JSONDecodeError as e:
         raise RuntimeError(
             f"Failed to parse Wave 2 output as JSON: {e}\nContent preview: {result.content[:500]}"
@@ -199,36 +204,7 @@ def _run_wave2_split(
         custom_id = f"w2-c{crit_num}-{str(uuid.uuid4())[:8]}"
         custom_id_to_criterion[custom_id] = crit_num
 
-        user_prompt = f"""Criterion {crit_num}: {crit_name}
-
-Claims from all sources for this criterion:
-
-{crit_doc}
-
-Produce the criterion JSON branch ONLY (not the full report tree). Schema:
-{{
-  "id": "c{crit_num}",
-  "title": "Criterion {crit_num}: {crit_name}",
-  "summary": "<2-3 sentence verdict>",
-  "satisfaction_pct": <integer 0-100>,
-  "clusters": [
-    {{
-      "id": "c{crit_num}.N",
-      "title": "<cluster title>",
-      "summary": "<paragraph>",
-      "items": [
-        {{
-          "id": "c{crit_num}.N.M",
-          "title": "<evidence title>",
-          "detail": "<detailed evidence with specific numbers>",
-          "references": [{{"source": "<name>", "url": "<url>", "date": "<YYYY-MM-DD>", "weight": <1-5>}}]
-        }}
-      ]
-    }}
-  ]
-}}
-
-Include 3-5 clusters with 2-4 items each."""
+        user_prompt = build_wave2_criterion_branch_user_prompt(crit_num, crit_name, crit_doc)
 
         batch_requests.append(
             BatchRequest(
@@ -254,23 +230,14 @@ Include 3-5 clusters with 2-4 items each."""
             logger.error(f"Criterion {crit_num} Wave 2 call failed: {result.error}")
             continue
         try:
-            criterion_trees[crit_num] = json.loads(result.content)
+            parsed = parse_envelope(result.content)
+            criterion_trees[crit_num] = unwrap_payload(parsed, TRACK_NAME)
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse criterion {crit_num} result: {e}")
 
     # Final synthesis call
     synthesis_custom_id = f"w2-synth-{str(uuid.uuid4())[:8]}"
-    synthesis_prompt = f"""Given these five criterion branch assessments, produce the complete report tree JSON.
-
-Criterion assessments:
-{json.dumps(criterion_trees, indent=2)[:40000]}
-
-Output the full report tree with executive summary and cross-criterion analysis. Follow the schema exactly:
-{{
-  "executive_summary": {{ "id": "exec", "title": "Executive Summary", "summary": "...", "scenario_assessment": "...", "scenario_rationale": "..." }},
-  "criteria": [ ...the five criterion branches, possibly improved from the above... ],
-  "cross_criterion_analysis": {{ "id": "cross", "title": "Cross-Criterion Analysis", "summary": "..." }}
-}}"""
+    synthesis_prompt = build_wave2_synthesis_user_prompt(criterion_trees)
 
     synthesis_requests = [
         BatchRequest(
@@ -293,7 +260,8 @@ Output the full report tree with executive summary and cross-criterion analysis.
         raise RuntimeError(f"Wave 2 synthesis call failed: {synthesis_result.error}")
 
     try:
-        report_tree = json.loads(synthesis_result.content)
+        parsed = parse_envelope(synthesis_result.content)
+        report_tree = unwrap_payload(parsed, TRACK_NAME)
     except json.JSONDecodeError as e:
         raise RuntimeError(f"Failed to parse Wave 2 synthesis output: {e}") from e
 

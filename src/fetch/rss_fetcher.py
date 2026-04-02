@@ -13,6 +13,14 @@ logger = logging.getLogger(__name__)
 ARXIV_SOURCE_NAMES = {"arxiv cs.ai", "arxiv cs.lg", "arxiv cs.cl"}
 ITEMS_PER_FEED = 50
 
+# Title + summary keyword filter for diffusion RSS sources (cloud / news)
+_AI_KW = re.compile(
+    r"artificial intelligence|machine learning|\bllm\b|generative ai|foundation model|"
+    r"copilot|bedrock|vertex ai|claude|\bgpt\b|gemini|large language|"
+    r"\bai\b",
+    re.I,
+)
+
 
 def _strip_html(text: str) -> str:
     """Remove HTML tags from text."""
@@ -93,3 +101,15 @@ def fetch_rss(source: dict, fetch_cycle_id: str) -> list[dict]:
 
     logger.info(f"  {source_name}: parsed {len(items)} entries")
     return items
+
+
+def fetch_rss_ai_keywords(source: dict, fetch_cycle_id: str) -> list[dict]:
+    """RSS fetch then keep items whose title+content match AI-related keywords."""
+    items = fetch_rss(source, fetch_cycle_id)
+    filtered = [
+        i
+        for i in items
+        if _AI_KW.search((i.get("title") or "") + " " + (i.get("content") or ""))
+    ]
+    logger.info(f"  {source.get('name', '')}: AI keyword filter {len(items)} → {len(filtered)}")
+    return filtered

@@ -82,35 +82,44 @@ def test_wave1_system_prompt_includes_framework():
     assert "Criterion 1" in prompt
     assert "Criterion 5" in prompt
     assert "Source Weight Guidelines" in prompt
-    assert "json_object" not in prompt.lower()  # schema should be in prompt text
+    assert "missing_context" in prompt
+    assert "payload" in prompt
 
 
 def test_wave1_output_schema_validation():
-    """A valid Wave 1 JSON output passes schema checks."""
+    """A valid Wave 1 JSON output (envelope + payload) passes schema checks."""
     import json
 
+    from src.process.response_envelope import unwrap_payload
+
     valid_output = json.dumps({
-        "source_id": 7,
-        "source_name": "OpenAI blog",
-        "source_weight": 4,
-        "weight_justification": "Primary lab publication with first-party claims",
-        "claims": [
-            {
-                "claim": "GPT-5 achieves 92.4% on GPQA Diamond",
-                "criterion": 1,
-                "evidence_type": "benchmark_score",
-                "confidence": "high",
-                "notes": "Self-reported; awaiting independent verification",
-            }
-        ],
+        "missing_context": False,
+        "missing": [],
+        "detail": "",
+        "payload": {
+            "source_id": 7,
+            "source_name": "OpenAI blog",
+            "source_weight": 4,
+            "weight_justification": "Primary lab publication with first-party claims",
+            "claims": [
+                {
+                    "claim": "GPT-5 achieves 92.4% on GPQA Diamond",
+                    "criterion": 1,
+                    "evidence_type": "benchmark_score",
+                    "confidence": "high",
+                    "notes": "Self-reported; awaiting independent verification",
+                }
+            ],
+        },
     })
 
     parsed = json.loads(valid_output)
-    assert "source_id" in parsed
-    assert "claims" in parsed
-    assert isinstance(parsed["claims"], list)
+    payload = unwrap_payload(parsed, "cognitive")
+    assert "source_id" in payload
+    assert "claims" in payload
+    assert isinstance(payload["claims"], list)
 
-    for claim in parsed["claims"]:
+    for claim in payload["claims"]:
         assert "claim" in claim
         assert "criterion" in claim
         assert claim["criterion"] in [1, 2, 3, 4, 5]
